@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ class TodoListScreen extends StatefulWidget {
 }
 
 class _TodoListScreenState extends State<TodoListScreen> {
+  bool isLoading = true;
   List items = [];
 
   @override
@@ -26,14 +28,44 @@ class _TodoListScreenState extends State<TodoListScreen> {
       appBar: AppBar(
         title: Text("Todo List"),
       ),
-      body: ListView.builder(
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return ListTile(
-              title: Text(items.toString()),
-            );
-          }),
+      body: Visibility(
+        visible: isLoading,
+        child: CircularProgressIndicator(),
+        replacement: RefreshIndicator(
+          onRefresh: fetchTodo,
+          child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index] as Map;
+
+                final id = item['_id'] as String;
+                return ListTile(
+                  leading: CircleAvatar(
+                    child: Text('${index + 1}'),
+                  ),
+                  title: Text(item['title']),
+                  subtitle: Text(item['description'] ?? "null"),
+                  trailing: PopupMenuButton(onSelected: (value) {
+                    if (value == 'edit') {}
+                    if (value == 'delete') {
+                      deletebyId(id);
+                    }
+                  }, itemBuilder: (context) {
+                    return [
+                      PopupMenuItem(
+                        child: Text('Edit'),
+                        value: 'edit',
+                      ),
+                      PopupMenuItem(
+                        child: Text('Delete'),
+                        value: 'delete',
+                      )
+                    ];
+                  }),
+                );
+              }),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
           backgroundColor: Colors.amber,
           onPressed: () {
@@ -42,6 +74,20 @@ class _TodoListScreenState extends State<TodoListScreen> {
           },
           label: Text("Add")),
     );
+  }
+
+  Future<void> deletebyId(String id) async {
+    final url = 'https://api.nstack.in/v1/todos/$id';
+    final uri = Uri.parse(url);
+    final response = await http.delete(uri);
+
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      final filtered = items.where((element) => element['_id'] != id).toList();
+      setState(() {
+        items = filtered;
+      });
+    } else {}
   }
 
   Future<void> fetchTodo() async {
@@ -61,5 +107,9 @@ class _TodoListScreenState extends State<TodoListScreen> {
     } else {
       print("no data retrieved");
     }
+
+    setState(() {
+      isLoading = false;
+    });
   }
 }
