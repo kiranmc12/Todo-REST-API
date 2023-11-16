@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/rendering.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -46,7 +47,11 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   title: Text(item['title']),
                   subtitle: Text(item['description'] ?? "null"),
                   trailing: PopupMenuButton(onSelected: (value) {
-                    if (value == 'edit') {}
+                    if (value == 'edit') {
+
+
+                      Navigator.of(context).push(MaterialPageRoute(builder:(context)=>AddPageScreen(todo:item)));
+                    }
                     if (value == 'delete') {
                       deletebyId(id);
                     }
@@ -87,7 +92,10 @@ class _TodoListScreenState extends State<TodoListScreen> {
       setState(() {
         items = filtered;
       });
-    } else {}
+    } else {
+      Fluttertoast.showToast(msg: "Deletion not done");
+
+    }
   }
 
   Future<void> fetchTodo() async {
